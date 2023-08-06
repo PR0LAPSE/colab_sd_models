@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import os, requests, subprocess, shutil
+import os, re, requests, subprocess, shutil
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import gradio as gr
@@ -81,6 +81,7 @@ def on_ui_tabs():
             return f"{free:.2f} {power_labels[n]}байт"
         # функция вычисления общего размера загружаемых файлов в байтах
         def get_file_size(url):
+            url = re.search(r'https?://\S+', url).group()
             def contleght(url): return int(requests.get(url, stream=True).headers.get('Content-Length', 0))
             if "huggingface" in url:
                 try:
