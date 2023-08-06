@@ -178,8 +178,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.querySelector("#downloads_result_text > span.dl_progress_info").textContent = "чтобы новые файлы появились в выпадающем списке моделей, нужно обновить их список по соответсвующей кнопке";
                   }
                 }
-                // просто скрываем прогрессбар если в выхлопе есть фраза о завершении
+                // просто скрываем прогрессбар если в выхлопе есть фраза о завершении или предупреждение
                 checkDLresult(DLresultText, "заверш");
+                checkDLresult(DLresultText, "слишком");
+                checkDLresult(DLresultText, "ОШИБКА");
+                // раскрашиваем текст сообщения о результате выполнения, если что-то пошло не так
+                if (DLresultText) {
+                  if (DLresultText.textContent.includes("слишком")) {
+                    DLresultText.style.setProperty("color", "#ff4f8b", "important");
+                  } else if (DLresultText.textContent.includes("ОШИБКА")) {
+                    DLresultText.style.setProperty("color", "#de2f2f", "important");
+                  }
+                }
               }, 200);
               // действия по клику на фейковую но видимую кнопку для скачивания
               document.querySelector("#general_download_button").addEventListener("click", function () {
