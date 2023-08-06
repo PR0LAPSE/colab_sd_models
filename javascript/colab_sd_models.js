@@ -5,12 +5,14 @@ document.addEventListener('DOMContentLoaded', () => {
         mutation.addedNodes.forEach((node) => {
           if (node.id === 'tab_models_list') {
             // запуск кода после загрузки элементов
+            // переопределение параметров колонок на основе числа моделей в категории
             const models_checkbox_grids = document.querySelectorAll("#tab_models_list fieldset > div[data-testid='checkbox-group']");
             models_checkbox_grids.forEach(models_checkbox_grid => {
               const model_label = models_checkbox_grid.querySelectorAll('label');
               const numColumns = model_label.length > 9 ? 'repeat(auto-fit, minmax(250px, 1fr))' : '1fr';
               models_checkbox_grid.style.gridTemplateColumns = numColumns;
             });
+            // подвсетка категории мужицких моделей (костаыль, потому что градио своим скриптом долбит каждые Nms переопределение классов)
             const intervalId = setInterval(() => {
               const modelsNavButtons = document.querySelectorAll("div#tab_models_list > div.gap > div.tabs > div.tab-nav > button");
               const MaleCat = Array.from(modelsNavButtons).find(button => button.textContent.includes('мужские'));
@@ -18,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 MaleCat.setAttribute("id", "male_only");
               }
             }, 100);
+            // получение инфы по кд о свободном пространтсве из скрытого уродского текстбокса в красивый элементик в шапочке
             const freespacetextarea = document.querySelector("#free_space_area > label > textarea");
             const frespace_out = document.querySelector("#frespace_out");
             let prevValue = freespacetextarea.value;
@@ -28,17 +31,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 prevValue = currentValue;
               }
             }, 100);
+            // скликивание реальной но скрытой уродской кнопки с обработчиком проверки свободного места при нажатии на фейковую но красивую кнопочку
             const freespace_getButton = document.querySelector("#freespace_get");
             const free_spaceOrigButton = document.querySelector("#free_space_button");
             freespace_getButton.addEventListener("click", function () {
               free_spaceOrigButton.click();
             });
+            // копирование реальных элементов из вкладок с моделями в результатах поиска
             const SearchBlock = document.querySelector('#clear_search_models_results').closest('label').closest('div').closest('div').closest('div');
             const ModelDLHeaderBlock = document.querySelector('.models_dl_header').closest('div').parentNode.closest('div').closest('div');
             const ModelDLHeaderContainer = document.querySelector('.models_dl_header').closest('div').parentNode;
             ModelDLHeaderBlock.appendChild(SearchBlock);
+            // небольшой css-фикс
             ModelDLHeaderContainer.style.cssText = `display: flex; flex-direction: row; align-items: center; justify-content: flex-start; flex-wrap: wrap;`;
             document.querySelector('.models_dl_header').parentNode.style.marginRight = "50px";
+            // фильтрация моделей при вводе
             const searchInput = document.querySelector('input[type="text"]');
             const findedModels = document.querySelector('#finded_models');
             const tabModelsList = document.querySelector('#tab_models_list');
@@ -62,21 +69,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
               }
             });
+            // обработчик на кнопочку очистки результатов
             clearSearchResultsButton.addEventListener('click', () => {
               findedModels.innerHTML = '';
               searchInput.value = '';
             });
+            // автоматическое скликивание скрытых кнопок для подгрузки установленных моделей и свободного места после загрузки дополнения через 1 сек
             setTimeout(() => document.querySelector("#files_button").click(), 1000);
             setTimeout(() => document.querySelector("#free_space_button").click(), 1000);
-            //файловый менеджер на тексбоксах
+            // файловый менеджер на тексбоксах
             setTimeout(() => {
               const filesArea = document.querySelector("#files_area > label > textarea");
               const filesCheckbox = document.querySelector("#files_checkbox");
               const deleteArea = document.querySelector("#delete_area > label > textarea");
+              // обновление списка чекбоксов с файлами при изменении списка путей в текстбоксе
               function addCheckboxEventListeners() {
                 const delete_checkboxes = document.querySelectorAll("#files_checkbox > label > input[type=checkbox]");
                 delete_checkboxes.forEach(checkbox => {
                   checkbox.addEventListener("change", event => {
+                    // отмеченные на удаление делаем красными и зачеркнутыми
                     const delete_span = event.target.parentElement.querySelector("span");
                     if (event.target.checked) {
                       delete_span.style.textDecoration = "line-through";
@@ -88,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   });
                 });
               }
+              // функция для обновления чекбоксов с файлами почти в реальном времени
               function updateCheckboxes() {
                 while (filesCheckbox.firstChild) {
                   filesCheckbox.removeChild(filesCheckbox.firstChild);
@@ -126,62 +138,75 @@ document.addEventListener('DOMContentLoaded', () => {
                   });
                 }
                 deleteArea.value = deleteArea.value.trim();
-                deleteArea.dispatchEvent(new Event('input')); // имитация ввода, это самая важная часть кода
+                deleteArea.dispatchEvent(new Event('input')); // имитация ввода, без этого не работает
                 addCheckboxEventListeners()
               }
+              // наблюдаем за скрытым тексбоксом с путями до моделей и обновлям чекбоксы
               const observer = new MutationObserver(updateCheckboxes);
               observer.observe(filesArea, { characterData: true, subtree: true });
               updateCheckboxes();
+              // скликивание реальной но скрытой уродской кнопки с обработчиком обновления списка файлов при нажатии на фейковую но красивую кнопочку
               const RefreshFilesButton = document.querySelector("#refresh_files_button");
               RefreshFilesButton.addEventListener("click", () => {
-				document.querySelector("#files_button").click();
+                document.querySelector("#files_button").click();
+                // задержки по 3 секунды необходимы, чтобы колаб одуплился
                 setTimeout(function () { updateCheckboxes(); }, 3000);
               });
+              // при клике на фейковую кнопочку удаления - произойдет и обновление списка файлов с задержкой 3 сек
               document.querySelector("#delete_button").addEventListener("click", function () {
                 setTimeout(function () {
                   document.querySelector("#files_button").click();
+                  // задержки по 3 секунды необходимы, чтобы колаб одуплился
                   setTimeout(function () { updateCheckboxes(); }, 3000);
-
                 }, 3000);
               });
+              // скликивание реальной но скрытой уродской кнопки с обработчиком удаления моделей при нажатии на фейковую но красивую кнопочку
               const OrigDelButton = document.querySelector("#delete_button");
               const CustomDelButton = document.querySelector("#delete_files_button");
               CustomDelButton.addEventListener("click", () => {
                 OrigDelButton.click();
               });
-			setInterval(function() {
-				var DLresultText = document.querySelector("#downloads_result_text > span.finish_dl_func");
-				DLresultText.textContent = document.querySelector("#dlresultbox > label > textarea").value;
-				function checkDLresult(element, text) {
-				if (element.textContent.includes(text)) {
-					document.querySelector("div.downloads_result_container > div.models_porgress_loader").style.removeProperty("display");
-					document.querySelector("#downloads_start_text").style.removeProperty("display");
-					document.querySelector("#downloads_result_text > span.dl_progress_info").textContent = "чтобы новые файлы появились в выпадающем списке моделей, нужно обновить их список по соответсвующей кнопке";
-				}
-			}
-			checkDLresult(DLresultText, "заверш");
-			}, 200);
-			document.querySelector("#general_download_button").addEventListener("click", function() {
-				var resultTextareaDL = document.querySelector("#dlresultbox > label > textarea");
-				resultTextareaDL.value = "";
-				var resultClearOut = new Event("input", { bubbles: true });
-				resultTextareaDL.dispatchEvent(resultClearOut);
-				const DLprogressBar = document.querySelector("div.downloads_result_container > div.models_porgress_loader");
-				DLprogressBar.style.setProperty("display", "block", "important");
-				const DLresultText = document.querySelector("#downloads_result_text");
-				DLresultText.style.setProperty("display", "block", "important");
-				document.querySelector("#downloads_start_text").style.setProperty("display", "block", "important");
-				document.querySelector("#ownlinks_download_button").click();
-				setTimeout(function() {
-					document.querySelector("#checkboxes_download_button").click();
-				}, 3000);
-			});
-            }, 9000);
+              // проверка выхлопа из функции загрузки в скрытом текстбоксе
+              setInterval(function () {
+                var DLresultText = document.querySelector("#downloads_result_text > span.finish_dl_func");
+                DLresultText.textContent = document.querySelector("#dlresultbox > label > textarea").value;
+                // функция скрытия прогрессбара
+                function checkDLresult(element, text) {
+                  if (element.textContent.includes(text)) {
+                    document.querySelector("div.downloads_result_container > div.models_porgress_loader").style.removeProperty("display");
+                    document.querySelector("#downloads_start_text").style.removeProperty("display");
+                    document.querySelector("#downloads_result_text > span.dl_progress_info").textContent = "чтобы новые файлы появились в выпадающем списке моделей, нужно обновить их список по соответсвующей кнопке";
+                  }
+                }
+                // просто скрываем прогрессбар если в выхлопе есть фраза о завершении
+                checkDLresult(DLresultText, "заверш");
+              }, 200);
+              // действия по клику на фейковую но видимую кнопку для скачивания
+              document.querySelector("#general_download_button").addEventListener("click", function () {
+                // очистка текстбокса от выхлопа предыдущего выполнения
+                var resultTextareaDL = document.querySelector("#dlresultbox > label > textarea");
+                resultTextareaDL.value = "";
+                var resultClearOut = new Event("input", { bubbles: true }); // без этого не будет работать обноволение .value
+                resultTextareaDL.dispatchEvent(resultClearOut);
+                // делаем прогрессбар и место для результирующего текста видимыми
+                const DLprogressBar = document.querySelector("div.downloads_result_container > div.models_porgress_loader");
+                DLprogressBar.style.setProperty("display", "block", "important");
+                const DLresultText = document.querySelector("#downloads_result_text");
+                DLresultText.style.setProperty("display", "block", "important");
+                document.querySelector("#downloads_start_text").style.setProperty("display", "block", "important");
+                // скликивание реальных но скрытых кнопок с обработчиками загрузки файлов по чекбоксам и кастомных ссылок при нажатии на фейковую но кнопочку
+                // формирование списка из кастомных ссылок
+                document.querySelector("#ownlinks_download_button").click();
+                setTimeout(function () {
+                  // через 3 сек. добавим его к списку ссылок из чекбоксов и отправим на загрузку вместе
+                  document.querySelector("#checkboxes_download_button").click();
+                }, 3000); // задержка, чтобы колаб успел одуплиться
+              });
+            }, 9000); // запуск скриптов через 9 секунд после загрузки вебуи, чтобы успели отработать скрипты других дополнений и градио
           }
         });
       }
     });
   });
-
   observer.observe(document.body, { childList: true, subtree: true });
 });
