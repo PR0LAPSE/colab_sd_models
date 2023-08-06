@@ -188,6 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     DLresultText.style.setProperty("color", "#ff4f8b", "important");
                   } else if (DLresultText.textContent.includes("ОШИБКА")) {
                     DLresultText.style.setProperty("color", "#de2f2f", "important");
+                  } else if (DLresultText.textContent.includes("заверш")) {
+                    DLresultText.style.setProperty("color", "#99fb99", "important");
                   }
                 }
               }, 200);
