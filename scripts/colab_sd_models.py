@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import os, requests, subprocess
+import os, requests, subprocess, shutil
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import gradio as gr
+from bs4 import BeautifulSoup
 from modules import scripts, script_callbacks
 
 urlprefix = "https://huggingface.co/2ch/models/resolve/main/"
@@ -59,8 +60,47 @@ def on_ui_tabs():
         # кнопка для формирования списка своих ссылок
         button = gr.Button("скачать по ссылкам", elem_id="ownlinks_download_button")
         button.click(get_own_links, inputs=[ownmodels, ownloras, ownembeddings])
-        # кнопка для отпраки на загрузку
+        # кнопка для отправки на загрузку
         download_button = gr.Button("скачать отмеченные модели", elem_id="checkboxes_download_button")
+        # функция определения точки монтирования и свободного места на диске
+        def find_mount_point():
+            #__file__ = "."
+            path = os.path.realpath(__file__)
+            path = os.path.abspath(path)
+            while not os.path.ismount(path):
+                path = os.path.dirname(path)
+            return path
+        def free_space():
+            total, used, free = shutil.disk_usage(find_mount_point())
+            power = 2**10
+            n = 0
+            power_labels = {0 : '', 1: 'Кило', 2: 'Мега', 3: 'Гига', 4: 'Тера'}
+            while free > power:
+                free /= power
+                n += 1
+            return f"{free:.2f} {power_labels[n]}байт"
+        # функция вычисления общего размера загружаемых файлов в байтах
+        def get_file_size(url):
+            def contleght(url): return int(requests.get(url, stream=True).headers.get('Content-Length', 0))
+            if "huggingface" in url:
+                try:
+                  try:
+                      file_size = int(next((pre.text.split('size ')[1].split('\n')[0] for pre in BeautifulSoup(requests.get(url.replace('resolve', 'blame')).text, 'html.parser').find_all('pre') if 'size' in pre.text)))
+                  except:
+                      file_size_text = BeautifulSoup(requests.get(url.replace('resolve', 'blob')).text, 'html.parser').find('strong', string='Size of remote file:').next_sibling.strip()
+                      file_size = int(float(file_size_text.split()[0]) * {'KB': 1024, 'MB': 1024**2, 'GB': 1024**3, 'TB': 1024**4}[file_size_text.split()[1]])
+                except:
+                    file_size = contleght(url)
+                if file_size < 1048576: file_size = contleght(url)
+            elif "civitai" in url:
+                try:
+                    file_size = int(requests.get("https://civitai.com/api/v1/model-versions/"+url.split('/')[-1]).json()["files"][0]["sizeKB"] * 1024)
+                except:
+                    file_size = contleght(url)
+                if file_size < 1048576: file_size = contleght(url)
+            else:
+                file_size = contleght(url)
+            return file_size
         # основная функция для загрузки отмеченных чекбоксов
         def start_download(*checkbox_groups):
             try:
@@ -82,7 +122,10 @@ def on_ui_tabs():
                 print(f"ОШИБКА: {e}")
                 return f"ОШИБКА: {e}"
             try:
-                def download_sdscripts(url):
+                def bytes_convert(size_bytes):
+                    if size_bytes >= 1073741824: return f"{round(size_bytes / 1073741824, 2)} Гб"
+                    else: return f"{round(size_bytes / 1048576, 2)} Мб"
+                def downloader(url):
                     process = subprocess.Popen(url, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                     while True:
                         output = process.stdout.readline().decode('utf-8')
@@ -91,38 +134,31 @@ def on_ui_tabs():
                         if output:
                             yield output.strip()
                     return process.poll()
+                total_file_size = 0
                 with ThreadPoolExecutor(max_workers=len(urls)) as executor:
-                    futures = [executor.submit(download_sdscripts, url) for url in urls]
+                    futures = [executor.submit(get_file_size, url) for url in urls]
                     for future in as_completed(futures):
-                        for line in future.result():
-                            print(line)
+                        total_file_size += future.result()
+                total, used, free = shutil.disk_usage(find_mount_point())
+                if total_file_size >= (free - 1073741824):
+                    print(f"загрузка {bytes_convert(total_file_size)} уже началась, жди!")
+                    with ThreadPoolExecutor(max_workers=len(urls)) as executor:
+                        futures = [executor.submit(downloader, url) for url in urls]
+                        for future in as_completed(futures):
+                            for line in future.result():
+                                print(line)
+                    return "функция загрузки завершила работу!"
+                else:
+                    print(f"слишком много файлов! ты пытаешься скачать {bytes_convert(total_file_size)}, имея свободных только {bytes_convert(free)} (и как минимум 1 Гб должен оставаться не занятым на диске!).")
+                    return f"слишком много файлов! ты пытаешься скачать {bytes_convert(total_file_size)}, имея свободных только {bytes_convert(free)} (и как минимум 1 Гб должен оставаться не занятым на диске!)."
             except Exception as e:
                 print(f"ОШИБКА: {e}")
                 return f"ОШИБКА: {e}"
-            return "функция загрузки завершила работу!"
         # скрытый текстбокс для вывода информации о результате
         dlresultbox = gr.Textbox(label="", elem_id="dlresultbox")
         download_button.click(start_download, inputs=checkbox_groups, outputs=dlresultbox)
         # анимация процесса выполнения функции загрузки
         gr.HTML("""<div class="downloads_result_container"><div class="models_porgress_loader"></div><div id="downloads_start_text">задача по загрузке запущена, подробности в выводе ячейки в колабе...</div><div id="downloads_result_text"><span class="finish_dl_func"></span><span class="dl_progress_info"></span></div></div>""")
-        # функция определения точки монтирования и свободного места на диске
-        def free_space():
-            def find_mount_point():
-                #__file__ = "."
-                path = os.path.realpath(__file__)
-                path = os.path.abspath(path)
-                while not os.path.ismount(path):
-                    path = os.path.dirname(path)
-                return path
-            import shutil
-            total, used, free = shutil.disk_usage(find_mount_point())
-            power = 2**10
-            n = 0
-            power_labels = {0 : '', 1: 'Кило', 2: 'Мега', 3: 'Гига', 4: 'Тера'}
-            while free > power:
-                free /= power
-                n += 1
-            return f"{free:.2f} {power_labels[n]}байт"
         # скрытые элементы для взаимодействия с функцией определения места на диске
         spacetextbox = gr.Textbox(label="", elem_id="free_space_area")
         space_button = gr.Button("проверить свободное место", elem_id="free_space_button")
