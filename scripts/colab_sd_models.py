@@ -141,7 +141,7 @@ def on_ui_tabs():
                     for future in as_completed(futures):
                         total_file_size += future.result()
                 total, used, free = shutil.disk_usage(find_mount_point())
-                if total_file_size >= (free - 1073741824):
+                if total_file_size <= (free - 1073741824):
                     print(f"загрузка {bytes_convert(total_file_size)} уже началась, жди!")
                     with ThreadPoolExecutor(max_workers=len(urls)) as executor:
                         futures = [executor.submit(downloader, url) for url in urls]
