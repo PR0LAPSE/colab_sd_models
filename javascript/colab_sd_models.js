@@ -213,6 +213,24 @@ document.addEventListener('DOMContentLoaded', () => {
                   // через 3 сек. добавим его к списку ссылок из чекбоксов и отправим на загрузку вместе
                   document.querySelector("#checkboxes_download_button").click();
                 }, 3000); // задержка, чтобы колаб успел одуплиться
+                // если кнопка уже нажата, запрещаем кликать еще раз пока функция загрузки не выплюнет ответ
+                var GendownloadButton  = document.querySelector("#general_download_button");
+                if (GendownloadButton  && DLprogressBar) {
+                    var observer = new MutationObserver(function (mutations) {
+                        mutations.forEach(function (mutation) {
+                            if (mutation.type === "attributes" && mutation.attributeName === "style") {
+                                if (DLprogressBar.style.display === "block") { // отслеживание видимости прогрессбара
+                                    GendownloadButton .setAttribute("disabled", "disabled");
+                                } else {
+                                    setTimeout(function () {
+                                        GendownloadButton .removeAttribute("disabled");
+                                    }, 3000); // не сразу даем кликнуть снова, а после ожидания 3 секунды, чтобы не закликали
+                                }
+                            }
+                        });
+                    });
+                    observer.observe(DLprogressBar, { attributes: true });
+                }
               });
             }, 9000); // запуск скриптов через 9 секунд после загрузки вебуи, чтобы успели отработать скрипты других дополнений и градио
           }
