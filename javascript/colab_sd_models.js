@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
         mutation.addedNodes.forEach((node) => {
           if (node.id === 'tab_models_list') {
             // запуск кода после загрузки элементов
+            Array.from(document.querySelectorAll('#tabs > div.tab-nav > button')).find(button => button.textContent.includes('модели')).click();
             // переопределение параметров колонок на основе числа моделей в категории
             const models_checkbox_grids = document.querySelectorAll("#tab_models_list fieldset > div[data-testid='checkbox-group']");
             models_checkbox_grids.forEach(models_checkbox_grid => {
