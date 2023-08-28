@@ -29,7 +29,7 @@ def on_ui_tabs():
             category_map = dict(zip(categories, tab_names))
             tab_name = category_map.get(category)
             with gr.Tab(tab_name):
-                checkbox_group = gr.CheckboxGroup(models_json_data['categories'][category], label="")
+                checkbox_group = gr.CheckboxGroup(sorted(models_json_data['categories'][category], key=lambda x: x.lower()), label="")
                 checkboxes.append(checkbox_group)
                 checkbox_groups.append(checkbox_group)
         # ссылки для реквеста добавления моделей
