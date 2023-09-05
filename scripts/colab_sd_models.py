@@ -41,7 +41,8 @@ def on_ui_tabs():
                 lines = text.split("\n")
                 for line in lines:
                     if line.strip():
-                        url = wget+line+" -P "+dlpath
+                        # url = wget+line+" -P "+dlpath
+                        url = f'{wget}"{line}" -P {dlpath}'
                         urls.append(url)
             own_urls = os.path.join(sdroot,"urls.txt")
             with open(own_urls, "w") as f:
