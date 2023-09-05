@@ -149,6 +149,11 @@ def on_ui_tabs():
                         for future in as_completed(futures):
                             for line in future.result():
                                 print(line)
+                    if os.path.exists(os.path.join(models_folder_path, "nullModel.ckpt")):
+                        try:
+                            os.remove(os.path.join(models_folder_path, "nullModel.ckpt"))
+                        except:
+                            pass
                     return "функция загрузки завершила работу!"
                 else:
                     print(f"слишком много файлов! ты пытаешься скачать {bytes_convert(total_file_size)}, имея свободных только {bytes_convert(free)} (и как минимум 1 Гб должен оставаться не занятым на диске!).")
