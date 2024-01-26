@@ -13,13 +13,13 @@ sdroot = "/".join(os.path.realpath(__file__).split("extensions")[0].split("/")[:
 models_folder_path = os.path.join(sdroot,"models/Stable-diffusion")
 loras_folder_path = os.path.join(sdroot,"models/Lora")
 embeddings_folder_path = os.path.join(sdroot,"embeddings")
-civitai_token = "?token=542c1d6077168822e1b49e30e3437a5d"
+ct = "token=542c1d6077168822e1b49e30e3437a5d"
 
 def on_ui_tabs():
     with gr.Blocks() as models_list:
         # шапка вкладки с поиском и свободным местом на диске
         gr.HTML("""<div class="models_top_container"><div class="models_top_header_text"><h1 class="models_dl_header">выбор и скачивание моделей</h1><p>учитывай весьма ограниченное пространство на диске в колабе!</p></div><div class="freespaceinfo"><div id="frespace_output"><span>свободно в колабе: <span id="frespace_out">нажми на кнопочку</span></div><div id="freespace_get"></div></div></div>""")
-        search_and_results = gr.HTML("""<label id="models_search_field"><input type="text" id="models_search_input" class="svelte-1pie7s6" placeholder="начни вводить для поиска"/><span id="clear_search_models_results"></span></label><div id="finded_models"></div>""")     
+        search_and_results = gr.HTML("""<label id="models_search_field"><input type="text" id="models_search_input" class="svelte-1pie7s6" placeholder="начни вводить для поиска"/><span id="clear_search_models_results"></span></label><div id="finded_models"></div>""")
         # вкладки с категориями
         buttons = []
         checkbox_groups = []
@@ -43,7 +43,7 @@ def on_ui_tabs():
                 for line in lines:
                     if line.strip():
                         # url = wget+line+" -P "+dlpath
-                        link = line.strip()+civitai_token if "civitai" in line else line
+                        link = line.strip() + (f'?{ct}' if '?' not in line else f'&{ct}') if 'civitai' in line else line.strip()
                         url = f'{wget}"{link}" -P {dlpath}'
                         urls.append(url)
             own_urls = os.path.join(sdroot,"urls.txt")
