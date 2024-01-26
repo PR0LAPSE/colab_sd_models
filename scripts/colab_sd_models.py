@@ -13,6 +13,7 @@ sdroot = "/".join(os.path.realpath(__file__).split("extensions")[0].split("/")[:
 models_folder_path = os.path.join(sdroot,"models/Stable-diffusion")
 loras_folder_path = os.path.join(sdroot,"models/Lora")
 embeddings_folder_path = os.path.join(sdroot,"embeddings")
+civitai_token = "?token=542c1d6077168822e1b49e30e3437a5d"
 
 def on_ui_tabs():
     with gr.Blocks() as models_list:
@@ -42,7 +43,8 @@ def on_ui_tabs():
                 for line in lines:
                     if line.strip():
                         # url = wget+line+" -P "+dlpath
-                        url = f'{wget}"{line}" -P {dlpath}'
+                        link = line.strip()+civitai_token if "civitai" in line else line
+                        url = f'{wget}"{link}" -P {dlpath}'
                         urls.append(url)
             own_urls = os.path.join(sdroot,"urls.txt")
             with open(own_urls, "w") as f:
@@ -96,7 +98,7 @@ def on_ui_tabs():
                 if file_size < 1048576: file_size = contleght(url)
             elif "civitai" in url:
                 try:
-                    file_size = int(requests.get("https://civitai.com/api/v1/model-versions/"+url.split('/')[-1]).json()["files"][0]["sizeKB"] * 1024)
+                    file_size = int(requests.get("https://civitai.com/api/v1/model-versions/"+url.split('/')[-1]+civitai_token).json()["files"][0]["sizeKB"] * 1024)
                 except:
                     file_size = contleght(url)
                 if file_size < 1048576: file_size = contleght(url)
